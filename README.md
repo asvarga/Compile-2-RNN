@@ -24,6 +24,7 @@ So it's equivalent to the term `(+ (d i) o)` and therefore `(+ (- i (+ i)) o)`. 
 
 - support operations: 
     - we want `M :: (ISO ++ log(ISO) ++ exp(ISO) ++ ...) -> (S ++ O)`, where `ISO := (I ++ S ++ O)`
+    - see diagram below
 - more forms in the compiled language
     - ex: `(* x y) := (exp (+ (log x) (log y)))`
 - also produce the initial state vector
@@ -31,6 +32,7 @@ So it's equivalent to the term `(+ (d i) o)` and therefore `(+ (- i (+ i)) o)`. 
 - program synthesis (backprop)
 
 
+![Simple RNN with operations diagram](pics/diagram.jpg)
 
 
 
