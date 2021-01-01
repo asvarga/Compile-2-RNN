@@ -20,16 +20,28 @@ We can compile terms like `(int (d i))` to matrices. In this example, the output
 
 So it's equivalent to the term `(+ (d i) o)` and therefore `(+ (- i (+ i)) o)`. Note `(+ i)` isn't redundant because it introduces a 1 step lag.
 
+### Files
+
+- `main.ipynb`: Very simple agents that can only do basic matrix stuff
+    - the last example is a PID controller
+- `main2.ipynb`: Adds unary functions like `log`, `exp`, etc.
+
 ### TODO
 
 - support operations: 
     - we want `M :: (ISO ++ log(ISO) ++ exp(ISO) ++ ...) -> (S ++ O)`, where `ISO := (I ++ S ++ O)`
     - see diagram below
+    - FIXME: this fails because 0 * inf == nan
 - more forms in the compiled language
     - ex: `(* x y) := (exp (+ (log x) (log y)))`
-- also produce the initial state vector
+- constants
+- also produce an initial state vector
 - optimize the compiled output
 - program synthesis (backprop)
+- pretty diagrams so it looks like its doing something
+
+- use square `(I ++ S ++ O) -> (I ++ S ++ O)` matrices and use composition
+    - this could speed up very simple agents, but doesn't work for full agents
 
 
 ![Simple RNN with operations diagram](pics/diagram.jpg)
