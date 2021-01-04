@@ -28,33 +28,40 @@ So it's equivalent to the term `(+ (d i) o)` and therefore `(+ (- i (+ i)) o)`. 
 
 ### TODO
 
-#### Main
-- compiler support for multiple o's
-- compiler should produce an initial state vector
-    - use this to implement constants (just need a permanent 1 in the state vector)
-- implement environment in PID example as it's own agent
-    - this just requires a nice way to hook agents together
-    - draw this out first
+- Think more generally about these agents and their connections
+    - They're related to monoidal category diagrams
+    - The interpreter of a diagram is itself an agent, and it's state is the data on the wires
+- Agents
+    - use named i/s/o values
+        - Agents should maintain correspondence between names and indices
+    - use square `(I ++ S ++ O) -> (I ++ S ++ O)` matrices?
+- Completely rewrite the compiler
+    - *don't conflate node ids with array indices*
+        - utilize named i/s/o instead
+    - handle nodes which are multiple of i/s/o
+    - produce initial state vector
+- Main
+    - implement environment in PID example as it's own agent
+        - this just requires a nice way to hook agents together
+        - draw this out first
+    - compiler should produce an initial state vector
+        - use this to implement constants (just need a permanent 1 in the state vector)
+    - compiler support for multiple o's
+- Main2
+    - support operations: 
+        - we want `M :: (ISO ++ log(ISO) ++ exp(ISO) ++ ...) -> (S ++ O)`, where `ISO := (I ++ S ++ O)`
+        - see diagram below
+        - FIXME: this fails because 0 * inf == nan
+    - more forms in the compiled language
+        - ex: `(* x y) := (exp (+ (log x) (log y)))`
+- Maybe
+    - program synthesis (backprop)
+    - optimize the compiled output
 
-#### Main2
-- support operations: 
-    - we want `M :: (ISO ++ log(ISO) ++ exp(ISO) ++ ...) -> (S ++ O)`, where `ISO := (I ++ S ++ O)`
-    - see diagram below
-    - FIXME: this fails because 0 * inf == nan
-- more forms in the compiled language
-    - ex: `(* x y) := (exp (+ (log x) (log y)))`
-
-#### Maybe
-- make `comp` less bad. ids of nodes shouldn't also be their matrix/vector index.
-    - use symbols/strings as the ids. ex: i0, s0, o0
-    - have to deal with nodes which are both outputs and state used by other outputs.
-- program synthesis (backprop)
-- optimize the compiled output
-- use square `(I ++ S ++ O) -> (I ++ S ++ O)` matrices and use composition
-    - this could speed up very simple agents, but doesn't work for full agents
-
+### Diagrams
 
 ![Simple RNN with operations diagram](pics/diagram.jpg)
+![PID components](pics/agent_env.png)
 
 
 
