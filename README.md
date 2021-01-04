@@ -28,18 +28,28 @@ So it's equivalent to the term `(+ (d i) o)` and therefore `(+ (- i (+ i)) o)`. 
 
 ### TODO
 
+#### Main
+- compiler support for multiple o's
+- compiler should produce an initial state vector
+    - use this to implement constants (just need a permanent 1 in the state vector)
+- implement environment in PID example as it's own agent
+    - this just requires a nice way to hook agents together
+    - draw this out first
+
+#### Main2
 - support operations: 
     - we want `M :: (ISO ++ log(ISO) ++ exp(ISO) ++ ...) -> (S ++ O)`, where `ISO := (I ++ S ++ O)`
     - see diagram below
     - FIXME: this fails because 0 * inf == nan
 - more forms in the compiled language
     - ex: `(* x y) := (exp (+ (log x) (log y)))`
-- constants
-- also produce an initial state vector
-- optimize the compiled output
-- program synthesis (backprop)
-- pretty diagrams so it looks like its doing something
 
+#### Maybe
+- make `comp` less bad. ids of nodes shouldn't also be their matrix/vector index.
+    - use symbols/strings as the ids. ex: i0, s0, o0
+    - have to deal with nodes which are both outputs and state used by other outputs.
+- program synthesis (backprop)
+- optimize the compiled output
 - use square `(I ++ S ++ O) -> (I ++ S ++ O)` matrices and use composition
     - this could speed up very simple agents, but doesn't work for full agents
 
