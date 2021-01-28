@@ -35,7 +35,7 @@ So it's equivalent to the term `(+ (d i) o)` and therefore `(+ (- i (+ i)) o)`. 
     - use named i/s/o values
         - Agents should maintain correspondence between names and indices
     - use square `(I ++ S ++ O) -> (I ++ S ++ O)` matrices?
-- Completely rewrite the compiler
+- *Completely rewrite the compiler*
     - *don't conflate node ids with array indices*
         - utilize named i/s/o instead
     - handle nodes which are multiple of i/s/o
