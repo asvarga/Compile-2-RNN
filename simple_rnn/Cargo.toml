@@ -8,3 +8,8 @@ edition = "2018"
 
 [dependencies]
 nalgebra = "0.24.0"
+egg = "0.6.0"
+# inline-python = "0.6.0"
+
+[dev-dependencies]
+env_logger = {version = "0.7", default-features = false}
