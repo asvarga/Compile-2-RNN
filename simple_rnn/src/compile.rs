@@ -1,12 +1,11 @@
 
 use egg::{*, rewrite as rw};
-use crate::util;
-use crate::util::{lift2};
+use crate::util::*;
 
 // type Rewrite = egg::Rewrite<Math, MathAnalysis>;
 
 define_language! {
-    enum Math {
+    pub enum Math {
         "vec" = Vec(Vec<Id>),
         "+" = Add([Id; 2]),
         "*" = Mul([Id; 2]),
@@ -42,7 +41,7 @@ impl Analysis<Math> for MathAnalysis {
 
         let value = match enode {
             Math::Num(n) => Some(*n),
-            Math::Add([a, b]) => util::lift2(|a, b| a+b, v(a), v(b)),
+            Math::Add([a, b]) => lift2(|a, b| a+b, v(a), v(b)),
             Math::Mul([a, b]) => lift2(|a, b| a*b, v(a), v(b)),
             _ => None,
         };
@@ -63,20 +62,46 @@ impl Analysis<Math> for MathAnalysis {
     }
 }
 
-
-
 #[rustfmt::skip]
 fn rules() -> Vec<egg::Rewrite<Math, MathAnalysis>> { vec![
     rw!("commute-add"; "(+ ?a ?b)" => "(+ ?b ?a)"),
     rw!("commute-mul"; "(* ?a ?b)" => "(* ?b ?a)"),
+    rw!("assoc-add-l"; "(+ ?a (+ ?b ?c))" => "(+ (+ ?a ?b) ?c)"),
+    rw!("assoc-add-r"; "(+ (+ ?a ?b) ?c)" => "(+ ?a (+ ?b ?c))"),
     rw!("add-0"; "(+ ?a 0)" => "?a"),
     rw!("mul-0"; "(* ?a 0)" => "0"),
     rw!("mul-1"; "(* ?a 1)" => "?a"),
     rw!("as-fst"; "(@ ?a ?b)" => "?a"),
     rw!("as-snd"; "(@ ?a ?b)" => "?b"),
-    rw!("prime-dist-add"; "(+ (' ?a) (' ?b))" => "(' (+ ?a ?b))"),
-    rw!("prime-dist-mul"; "(* (' ?a) (' ?b))" => "(' (* ?a ?b))"),
+    rw!("dist-mul-add"; "(+ (* ?a ?b) (* ?a ?c))" => "(* ?a (+ ?b ?c))"),
+    rw!("dist-prime-add"; "(+ (' ?a) (' ?b))" => "(' (+ ?a ?b))"),
+    rw!("dist-prime-mul"; "(* (' ?a) (' ?b))" => "(' (* ?a ?b))"),
+
+    // want (+ x (+ x x)) ~> (* x 3) etc. in our case we do want mul-a-rev for linear combos
+    rw!("mul-1-rev"; "?a" => "(* ?a 1)"),                    // expansive
+    // rw!("double"; "(+ ?a ?a)" => "(* ?a 2)"),                   // non-expansive
+    // rw!("rep-add"; "(+ ?a (* ?a ?n))" => "(* (+ ?n 1) ?a)"),    // non-expansive
 ]}
+
+pub fn optimize(s: &str) -> RecExpr<Math> {
+    let start = s.parse().unwrap();
+    let runner = Runner::default().with_expr(&start).run(&rules());
+    let (egraph, root) = (runner.egraph, runner.roots[0]);
+    let mut extractor = Extractor::new(&egraph, AstSize);
+    let (best_cost, best) = extractor.find_best(root);
+    return best;
+}
+
+// examples //
+
+pub fn go(s: &str) {
+    let start = s.parse().unwrap();
+    let runner = Runner::default().with_expr(&start).run(&rules());
+    let (egraph, root) = (runner.egraph, runner.roots[0]);
+    let mut extractor = Extractor::new(&egraph, AstSize);
+    let (best_cost, best) = extractor.find_best(root);
+    println!("{} ~~> {} <cost={}>", s, best, best_cost);    // ex: (+ 0 (* 1 10)) ~~> 10 <cost=5>
+}
 
 // tests //
 
@@ -108,5 +133,16 @@ egg::test_fn! { #[should_panic]
     prime_fail, rules(), "(' x)" => "x",
 }
 
-
+egg::test_fn! {
+    rep_add_1, rules(), "(+ (+ x x) (+ x x))" => "(* x 4)",
+}
+egg::test_fn! {
+    rep_add_2, rules(), "(+ (+ x x) (+ (+ x y) (+ (+ x y) (+ x y))))" => "(+ (* y 3) (* x 5))",
+}
+egg::test_fn! {
+    rep_add_3, rules(), "(+ x (+ x (+ x y)))" => "(+ y (* x 3))",
+}
+egg::test_fn! {
+    rep_add_4, rules(), "(+ (+ (+ y x) x) x)" => "(+ y (* x 3))",
+}
 

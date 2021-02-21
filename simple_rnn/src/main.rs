@@ -3,6 +3,7 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 
+use compile::optimize;
 use nalgebra::{DMatrix, DVector};
 
 mod util;
@@ -12,24 +13,20 @@ mod compile;
 ////
 
 fn main() {
-    println!("Hello, world!");
+    // println!("Hello, world!");
 
-    let m = DMatrix::from_row_slice(3, 3, &[
-        2.0, 0.0, 0.0,
-        0.0, 2.0, 0.0,
-        0.0, 0.0, 2.0,
-    ]);
+    // let m = DMatrix::from_row_slice(3, 3, &[
+    //     2.0, 0.0, 0.0,
+    //     0.0, 2.0, 0.0,
+    //     0.0, 0.0, 2.0,
+    // ]);
+    // let v = matrix::row(vec![1.0, 2.0, 3.0]);
+    // matrix::print(v*m);
 
-    let v = matrix::row(vec![1.0, 2.0, 3.0]);
-    // let v = col(vec![1.0, 2.0, 3.0]);
-
-    // let n = m.clone().transpose();
-
-    // println!("{:?}", m);
-    // print(m*n);
-
-    matrix::print(v*m);
-    // print(m*v);
+    compile::go("(+ (+ x x) (+ x x))");  // ~~> (* x 4) <cost=3>
+    compile::go("(+ (+ x x) (+ (+ x y) (+ (+ x y) (+ x y))))"); // ~~> (+ (* y 3) (* x 5)) <cost=7>
+    compile::go("(+ x (+ x (+ x y)))"); // ~~> (+ y (* x 3)) <cost=5>
+    compile::go("(+ (+ (+ y x) x) x)"); // ~~> (+ y (* x 3)) <cost=5>
 }
 
 
