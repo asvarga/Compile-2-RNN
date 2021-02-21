@@ -5,7 +5,9 @@
 
 use nalgebra::{DMatrix, DVector};
 
+mod util;
 mod matrix;
+mod compile;
 
 ////
 

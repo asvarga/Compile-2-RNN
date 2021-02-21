@@ -1,10 +1,9 @@
 
 use egg::{*, rewrite as rw};
-// use util::*;
+use crate::util;
+use crate::util::{lift2};
 
 // type Rewrite = egg::Rewrite<Math, MathAnalysis>;
-
-//
 
 define_language! {
     enum Math {
@@ -16,53 +15,6 @@ define_language! {
         Num(i32),
         Symbol(Symbol),
     }
-}
-
-// #[derive(Default)]
-// struct ConstAnalysis;
-// impl Analysis<Math> for ConstAnalysis {
-//     type Data = Option<i32>;
-//     fn merge(&self, to: &mut Self::Data, from: Self::Data) -> bool {
-//         egg::merge_if_different(to, to.or(from))
-//     }
-//     fn make(egraph: &egg::EGraph<Math, Self>, enode: &Math) -> Self::Data {
-//         let x = |i: &Id| egraph[*i].data;
-//         match enode {
-//             Math::Num(n) => Some(*n),
-//             Math::Add([a, b]) => Some(x(a)? + x(b)?),
-//             Math::Mul([a, b]) => Some(x(a)? * x(b)?),
-//             _ => None,
-//         }
-//     }
-//     fn modify(egraph: &mut egg::EGraph<Math, Self>, id: Id) {
-//         if let Some(i) = egraph[id].data {
-//             let added = egraph.add(Math::Num(i));
-//             egraph.union(id, added);
-//         }
-//     }
-// }
-
-// #[derive(Default)]
-// struct LegalAnalysis;
-// impl Analysis<Math> for LegalAnalysis {
-//     type Data = bool;
-//     fn merge(&self, to: &mut Self::Data, from: Self::Data) -> bool {
-//         egg::merge_if_different(to, *to || from)
-//     }
-//     fn make(egraph: &egg::EGraph<Math, Self>, enode: &Math) -> Self::Data {
-//         let x = |i: &Id| egraph[*i].data;
-//         match enode {
-//             Math::Num(n) => true,
-//             Math::Add([a, b]) => x(a) && x(b),
-//             Math::Mul([a, b]) => x(a) && x(b),
-//             _ => false,
-//         }
-//     }
-// }
-
-
-fn lift2<A, B, R>(f: fn(A, B) -> R, ma: Option<A>, mb: Option<B>) -> Option<R> {
-    ma.and_then(|a| mb.map(|b| f(a, b)))
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -90,7 +42,7 @@ impl Analysis<Math> for MathAnalysis {
 
         let value = match enode {
             Math::Num(n) => Some(*n),
-            Math::Add([a, b]) => lift2(|a, b| a+b, v(a), v(b)),
+            Math::Add([a, b]) => util::lift2(|a, b| a+b, v(a), v(b)),
             Math::Mul([a, b]) => lift2(|a, b| a*b, v(a), v(b)),
             _ => None,
         };
