@@ -1,4 +1,7 @@
 
+use std::f64::INFINITY;
+use std::cmp::{Ordering, max};
+
 use egg::{*, rewrite as rw};
 use crate::util::*;
 
@@ -62,6 +65,90 @@ impl Analysis<Math> for MathAnalysis {
     }
 }
 
+// // the derived PartialOrd will prioritize making illegal false
+// #[derive(Debug, Clone, PartialEq, PartialOrd)]
+// struct ConstrainedCost {
+//     illegal: bool,
+//     cost: f64,
+// }
+
+#[derive(Debug, Clone, Eq)]
+pub struct LinCombCost {
+    depth: u32,
+    is_combo: bool,
+    is_mono: bool,
+    is_num: bool,
+}
+
+impl Default for LinCombCost {
+    fn default() -> Self {
+        LinCombCost{ depth: u32::MAX, is_combo: false, is_mono: false, is_num: false, }
+    }
+}
+
+impl PartialEq for LinCombCost {
+    fn eq(&self, other: &Self) -> bool {
+        self.is_combo && other.is_combo && self.depth == other.depth
+    }
+}
+
+impl PartialOrd for LinCombCost {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for LinCombCost {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match (self.is_combo, other.is_combo) {
+            (true, false) => Ordering::Less,
+            (false, true) => Ordering::Greater,
+            _ => self.depth.cmp(&other.depth),
+        }
+    }
+}
+
+pub struct LinCombDepth;
+impl egg::CostFunction<Math> for LinCombDepth {
+    type Cost = LinCombCost;
+    fn cost<C>(&mut self, enode: &Math, mut costs: C) -> Self::Cost
+    where
+        C: FnMut(Id) -> Self::Cost,
+    {
+        match enode {
+            Math::Num(i) => LinCombCost{ depth: 1u32, 
+                                              is_mono: false, 
+                                              is_combo: *i == 0, 
+                                              is_num: true, },
+            Math::Add([x, y]) => {
+                let (xcost, ycost) = (costs(*x), costs(*y));
+                LinCombCost{ depth: max(xcost.depth, ycost.depth), 
+                             is_combo: xcost.is_mono && ycost.is_combo, 
+                             is_mono: false, 
+                             is_num: false, }
+            }
+            Math::Mul([x, y]) => {
+                let (xcost, ycost) = (costs(*x), costs(*y));
+                LinCombCost{ depth: xcost.depth+1, 
+                             is_combo: false, 
+                             is_mono: ycost.is_num, 
+                             is_num: false, }
+            }
+            Math::Prime(x) => {
+                let xcost = costs(*x);
+                LinCombCost{ depth: xcost.depth+1, 
+                             is_combo: false, 
+                             is_mono: false, // is this correct?
+                             is_num: false, }
+            }
+            Math::Vec(xs) => {
+                xs.iter().map(|i| costs(*i)).max().unwrap_or_else(LinCombCost::default)
+            }
+            _ => LinCombCost::default(),
+        }
+    }
+}
+
 #[rustfmt::skip]
 fn rules() -> Vec<egg::Rewrite<Math, MathAnalysis>> { vec![
     rw!("commute-add"; "(+ ?a ?b)" => "(+ ?b ?a)"),
@@ -77,10 +164,12 @@ fn rules() -> Vec<egg::Rewrite<Math, MathAnalysis>> { vec![
     rw!("dist-prime-add"; "(+ (' ?a) (' ?b))" => "(' (+ ?a ?b))"),
     rw!("dist-prime-mul"; "(* (' ?a) (' ?b))" => "(' (* ?a ?b))"),
 
-    // want (+ x (+ x x)) ~> (* x 3) etc. in our case we do want mul-a-rev for linear combos
+    // we want (+ x (+ x x)) ~> (* x 3) etc. in our case we do want mul-a-rev for linear combos
     rw!("mul-1-rev"; "?a" => "(* ?a 1)"),                    // expansive
     // rw!("double"; "(+ ?a ?a)" => "(* ?a 2)"),                   // non-expansive
     // rw!("rep-add"; "(+ ?a (* ?a ?n))" => "(* (+ ?n 1) ?a)"),    // non-expansive
+
+    // rw!("add-0-rev"; "?a" => "(+ ?a 0)"),    // FIXME: this times out :(
 ]}
 
 pub fn optimize(s: &str) -> RecExpr<Math> {
